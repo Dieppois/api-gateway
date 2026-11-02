@@ -17,3 +17,10 @@ docker compose down               # arrêter
 ```
 
 Seule la Gateway est exposée. Users et Orders restent sur le réseau Docker interne.
+
+## Tests
+
+```bash
+python -m pip install -r gateway/requirements.txt pytest
+GATEWAY_TOKEN=ci-test-token python -m pytest -q
+```

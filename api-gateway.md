@@ -86,3 +86,20 @@ Jeton chargé avec `set -a; source .env; set +a`, puis `curl -i` sur `localhost:
 ![Profile 1](captures/etape9-05-profile-1.png)
 ![Profile 999](captures/etape9-06-profile-999.png)
 ![Health](captures/etape9-07-health.png)
+
+## Étape 10 : tests pytest
+
+`tests/test_gateway.py` : 5 tests sur la Gateway isolée (appels backend simulés via `monkeypatch` de `fetch_json`).
+
+- `/health` public, `/users` refusé sans jeton ou avec un mauvais jeton (401).
+- `/profile/1` agrège Alice + commandes 101 et 103, `/profile/999` renvoie 404.
+
+```bash
+python -m pip install -r gateway/requirements.txt pytest
+export GATEWAY_TOKEN=ci-test-token
+python -m pytest -q
+```
+
+Résultat : `5 passed`.
+
+![pytest](captures/etape10-01-pytest.png)
