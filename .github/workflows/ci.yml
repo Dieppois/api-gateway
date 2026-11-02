@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # Jeton fictif réservé aux tests, jamais utilisé en production.
+      GATEWAY_TOKEN: ci-test-token
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: python -m pip install -r gateway/requirements.txt pytest
+
+      - run: python -m pytest -q
+
+  build:
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # GITHUB_TOKEN est fourni automatiquement par GitHub, aucun mot de passe dans le fichier.
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build et push des images
+        run: |
+          # GHCR exige des noms d'image en minuscules.
+          PREFIX="ghcr.io/${GITHUB_REPOSITORY,,}"
+          for service in users orders gateway; do
+            docker build -t "$PREFIX/$service:$GITHUB_SHA" "./$service"
+            docker push "$PREFIX/$service:$GITHUB_SHA"
+          done

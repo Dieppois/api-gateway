@@ -103,3 +103,20 @@ python -m pytest -q
 Résultat : `5 passed`.
 
 ![pytest](captures/etape10-01-pytest.png)
+
+## Étape 11 : principe de la pipeline
+
+Push sur GitLab -> stage `test` (pytest) -> stage `build` (3 images Docker) -> push dans le GitLab Container Registry, tag `$CI_COMMIT_SHA`. Le build ne s'exécute que si les tests passent.
+
+## Étape 12 : pipeline CI/CD (adaptation GitHub)
+
+Le projet est hébergé sur GitHub : `.gitlab-ci.yml` est remplacé par `.github/workflows/ci.yml` (GitHub Actions) et le GitLab Container Registry par GHCR (`ghcr.io`).
+
+- Job `test` : Python 3.12, `pytest` avec un jeton fictif `ci-test-token`.
+- Job `build` : `needs: test`, uniquement sur push. Construit et pousse `users`, `orders`, `gateway` vers `ghcr.io/<owner>/<repo>/<service>:<sha>`.
+- Connexion au registry avec le `GITHUB_TOKEN` fourni automatiquement (équivalent des variables prédéfinies GitLab), permissions minimales (`packages: write` seulement sur `build`).
+- Pas de Docker-in-Docker : les runners GitHub ont Docker nativement.
+
+## Étape 13 : publication sur GitHub
+
+Push sur GitHub, vérification de la pipeline dans l'onglet Actions et des 3 images dans Packages (GHCR).
