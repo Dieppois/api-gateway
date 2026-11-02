@@ -6,6 +6,7 @@ Microservices FastAPI (données en mémoire), conteneurisés avec Docker.
 |---|---|---|
 | `users` | `/health`, `/users`, `/users/{id}` | 8000 |
 | `orders` | `/health`, `/orders`, `/orders/user/{id}`, `/orders/{id}` | 8000 |
+| `gateway` | `/health`, `/users`, `/orders`, `/profile/{id}` (Bearer requis sauf `/health`) | 8000 |
 
 ## Lancer
 

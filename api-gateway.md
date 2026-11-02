@@ -22,3 +22,20 @@ Résultat : toutes les requêtes répondent 200 avec les données attendues.
 ![Réponses Users](captures/etape3-03-users-curl.png)
 ![Logs Orders](captures/etape3-04-orders-logs.png)
 ![Réponses Orders](captures/etape3-05-orders-curl.png)
+
+## Étape 4 : responsabilités de la Gateway
+
+| Route | Rôle | Auth |
+|---|---|---|
+| `GET /users` | Proxy vers Users | Bearer |
+| `GET /orders` | Proxy vers Orders | Bearer |
+| `GET /profile/{id}` | Agrégation BFF user + commandes | Bearer |
+| `GET /health` | État de la Gateway | Public |
+
+Protections : jeton Bearer en variable d'environnement, timeout vers les services, erreurs internes masquées (502), backends sur réseau Docker privé sans port publié.
+
+## Étape 5 : code de la Gateway
+
+- `main.py` : auth Bearer comparée en temps constant (`secrets.compare_digest`), appels `httpx` avec timeout 5 s, erreurs backend converties en 502, `/profile/{id}` appelle Users et Orders en parallèle (`asyncio.gather`) puis filtre.
+- `requirements.txt` : `fastapi`, `uvicorn`, `httpx`.
+- `Dockerfile` : identique aux services (slim, non-root).
