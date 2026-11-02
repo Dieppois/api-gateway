@@ -120,3 +120,37 @@ Le projet est hébergé sur GitHub : `.gitlab-ci.yml` est remplacé par `.github
 ## Étape 13 : publication sur GitHub
 
 Push sur GitHub, vérification de la pipeline dans l'onglet Actions et des 3 images dans Packages (GHCR).
+
+Résultat : pipeline `CI #1` en succès (`test` 14 s, `build` 57 s), 3 packages `users`, `orders`, `gateway` publiés sur GHCR et liés au dépôt `Dieppois/api-gateway`, tagués avec le SHA complet du commit (`630aff2d795f...`).
+
+![Actions](captures/etape13-01-actions.png)
+![Pipeline](captures/etape13-02-pipeline-success.png)
+![Packages GHCR](captures/etape13-03-packages-ghcr.png)
+![Tag SHA](captures/etape13-04-tag-sha.png)
+
+## Étape 17 : checklist de sécurité
+
+- [x] `.env` exclu de Git (`.gitignore`, vérifié avec `git check-ignore`).
+- [x] Jeton Bearer exigé sur `/users`, `/orders`, `/profile/{id}` (401 sans jeton).
+- [x] Users et Orders ne publient aucun port sur l'hôte.
+- [x] Communications internes sur le réseau Docker `backend` (`internal: true`).
+- [x] Conteneurs non-root (`appuser`, UID 10001).
+- [x] Timeout de 5 s sur les appels vers les microservices.
+- [x] Erreurs backend masquées : le client reçoit seulement un 502 générique.
+- [x] Connexion au registry via le `GITHUB_TOKEN` fourni par GitHub (équivalent des variables prédéfinies GitLab).
+- [x] Images taguées avec le SHA du commit.
+- [ ] Analyse des images et dépendances avant production : non réalisée (amélioration optionnelle).
+
+## Étape 18 : questions de compréhension
+
+**1. Avantages d'une API Gateway**
+Point d'entrée unique : le client ne connaît pas l'organisation interne des services. La sécurité (authentification, timeouts, gestion des erreurs) est centralisée au même endroit. Elle peut agréger plusieurs services en une seule réponse (BFF), comme `/profile/{id}`, ce qui réduit le nombre de requêtes côté client.
+
+**2. Inconvénients**
+Point de défaillance unique si elle n'est pas redondée. Saut réseau supplémentaire, donc latence ajoutée. Risque de devenir trop complexe si on y concentre toute la logique. Elle demande supervision, gestion des secrets et mises à jour régulières.
+
+**3. Gérer l'authentification et la sécurité**
+Valider les jetons à la Gateway, idéalement des jetons courts émis par un fournisseur d'identité (OAuth 2.0/OIDC) plutôt qu'un secret statique. Appliquer des autorisations par ressource (authentification n'est pas autorisation), utiliser HTTPS, protéger et faire tourner les secrets, limiter le débit et restreindre l'accès réseau aux services internes. Les microservices doivent aussi contrôler les accès sensibles à leurs données : un réseau privé n'est pas une authentification.
+
+**4. API Gateway vs reverse proxy NGINX**
+Un reverse proxy route les requêtes et gère TLS, en-têtes et règles de trafic. Une API Gateway est orientée gestion d'API : authentification, quotas, gestion des clients, agrégation BFF. Les deux se recoupent, car NGINX peut être configuré pour remplir une partie de ces fonctions.
