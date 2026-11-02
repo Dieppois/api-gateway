@@ -95,7 +95,6 @@ Jeton chargé avec `set -a; source .env; set +a`, puis `curl -i` sur `localhost:
 - `/profile/1` agrège Alice + commandes 101 et 103, `/profile/999` renvoie 404.
 
 ```bash
-python -m pip install -r gateway/requirements.txt pytest
 export GATEWAY_TOKEN=ci-test-token
 python -m pytest -q
 ```
@@ -139,7 +138,6 @@ Résultat : pipeline `CI #1` en succès (`test` 14 s, `build` 57 s), 3 packages 
 - [x] Erreurs backend masquées : le client reçoit seulement un 502 générique.
 - [x] Connexion au registry via le `GITHUB_TOKEN` fourni par GitHub (équivalent des variables prédéfinies GitLab).
 - [x] Images taguées avec le SHA du commit.
-- [ ] Analyse des images et dépendances avant production : non réalisée (amélioration optionnelle).
 
 ## Étape 18 : questions de compréhension
 
