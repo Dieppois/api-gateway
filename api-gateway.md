@@ -39,3 +39,50 @@ Protections : jeton Bearer en variable d'environnement, timeout vers les service
 - `main.py` : auth Bearer comparée en temps constant (`secrets.compare_digest`), appels `httpx` avec timeout 5 s, erreurs backend converties en 502, `/profile/{id}` appelle Users et Orders en parallèle (`asyncio.gather`) puis filtre.
 - `requirements.txt` : `fastapi`, `uvicorn`, `httpx`.
 - `Dockerfile` : identique aux services (slim, non-root).
+
+## Étape 6 : configuration et secrets
+
+- `.env` : `GATEWAY_TOKEN` généré avec `openssl rand -hex 32`, jamais commité.
+- `.gitignore` et `.dockerignore` : excluent `.env`, caches Python et `.venv`.
+
+## Étape 7 : Docker Compose
+
+- Seule la Gateway publie un port : `127.0.0.1:3000 -> 8000`.
+- Réseau `backend` interne (Users, Orders, Gateway) et réseau `frontend` (Gateway seule, pour le port publié).
+- Durcissement commun : `read_only`, `cap_drop: ALL`, `no-new-privileges`.
+- Healthchecks sur `/health` (Python, pas de curl dans l'image slim). La Gateway attend que Users et Orders soient healthy.
+- `GATEWAY_TOKEN` lu depuis `.env`, le démarrage échoue s'il manque.
+
+## Étape 8 : démarrage de l'architecture
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose logs gateway
+```
+
+Résultat : les 3 services passent `healthy`, seule la Gateway expose `127.0.0.1:3000->8000/tcp`.
+
+![Compose up](captures/etape8-01-compose-up.png)
+![Services healthy et logs Gateway](captures/etape8-02-compose-healthy.png)
+
+## Étape 9 : tests des endpoints
+
+Jeton chargé avec `set -a; source .env; set +a`, puis `curl -i` sur `localhost:3000`.
+
+| Requête | Attendu | Obtenu |
+|---|---|---|
+| `/users` sans jeton | 401 | 401 `Missing or invalid authentication token` |
+| `/users` | 200 | 200 Alice, Bob |
+| `/orders` | 200 | 200 commandes 101, 102, 103 |
+| `/profile/1` | 200 | 200 Alice + commandes 101, 103 |
+| `/profile/999` | 404 | 404 `User not found` |
+| `/health` sans jeton | 200 | 200 `{"status":"ok"}` |
+
+![source .env](captures/etape9-01-source-env.png)
+![Sans jeton](captures/etape9-02-users-sans-jeton.png)
+![Users](captures/etape9-03-users.png)
+![Orders](captures/etape9-04-orders.png)
+![Profile 1](captures/etape9-05-profile-1.png)
+![Profile 999](captures/etape9-06-profile-999.png)
+![Health](captures/etape9-07-health.png)

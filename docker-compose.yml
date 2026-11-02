@@ -1,0 +1,53 @@
+x-hardening: &hardening
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
+
+x-healthcheck: &healthcheck
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)"]
+  interval: 10s
+  timeout: 5s
+  retries: 3
+  start_period: 5s
+
+services:
+  users:
+    <<: *hardening
+    build: ./users
+    healthcheck: *healthcheck
+    networks:
+      - backend
+
+  orders:
+    <<: *hardening
+    build: ./orders
+    healthcheck: *healthcheck
+    networks:
+      - backend
+
+  gateway:
+    <<: *hardening
+    build: ./gateway
+    environment:
+      USERS_SERVICE: http://users:8000
+      ORDERS_SERVICE: http://orders:8000
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN:?GATEWAY_TOKEN doit être défini dans .env}
+    ports:
+      - "127.0.0.1:3000:8000"
+    healthcheck: *healthcheck
+    depends_on:
+      users:
+        condition: service_healthy
+      orders:
+        condition: service_healthy
+    networks:
+      - frontend
+      - backend
+
+networks:
+  frontend:
+  backend:
+    internal: true
