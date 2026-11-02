@@ -1,22 +1,22 @@
-# NOVA SERVICES : E-Shop API Gateway
+# NOVA SERVICES: E-Shop API Gateway
 
-Microservices FastAPI (données en mémoire), conteneurisés avec Docker.
+FastAPI microservices (in-memory data), containerized with Docker.
 
 | Service | Routes | Port |
 |---|---|---|
 | `users` | `/health`, `/users`, `/users/{id}` | 8000 |
 | `orders` | `/health`, `/orders`, `/orders/user/{id}`, `/orders/{id}` | 8000 |
-| `gateway` | `/health`, `/users`, `/orders`, `/profile/{id}` (Bearer requis sauf `/health`) | 3000 (hôte) |
+| `gateway` | `/health`, `/users`, `/orders`, `/profile/{id}` (Bearer required except `/health`) | 3000 (host) |
 
-## Lancer
+## Run
 
 ```bash
-cp .env.example .env              # puis remplacer la valeur par : openssl rand -hex 32
-docker compose up --build -d      # Gateway sur http://localhost:3000
-docker compose down               # arrêter
+cp .env.example .env              # then replace the value with: openssl rand -hex 32
+docker compose up --build -d      # Gateway on http://localhost:3000
+docker compose down               # stop
 ```
 
-Seule la Gateway est exposée. Users et Orders restent sur le réseau Docker interne.
+Only the Gateway is exposed. Users and Orders stay on the internal Docker network.
 
 ## Tests
 
